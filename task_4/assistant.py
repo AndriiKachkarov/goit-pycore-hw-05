@@ -3,9 +3,8 @@ from functools import wraps
 
 Contacts = Dict[str, str]
 
-QuoteType = Literal["'", '"']
-
 UNIVERSAL_ERROR_MESSAGE = "Enter the argument for the command"
+
 
 def input_error(func: Callable[..., str]) -> Callable[..., str]:
     """
@@ -13,6 +12,7 @@ def input_error(func: Callable[..., str]) -> Callable[..., str]:
     raised in command handler functions and returns the unified error message
     "Enter the argument for the command".
     """
+
     @wraps(func)
     def inner(*args: Any, **kwargs: Any) -> str:
         try:
@@ -88,12 +88,12 @@ def add_contact(args: List[str], contacts: Contacts) -> str:
     """
     Adds a new contact (name and phone) to the contacts dictionary.
     Raises IndexError if args are missing.
+    Raises ValueError if contact already exists (treated as input error).
     """
     name, phone = args
 
     if name in contacts:
-        # We assume for simplicity that existing contact message is not an 'input error'
-        return "Error: Contact name already exists."
+        raise ValueError(f"Contact name '{name}' already exists.")
 
     contacts[name] = phone
     return "Contact added."
@@ -104,17 +104,12 @@ def change_contact(args: List[str], contacts: Contacts) -> str:
     """
     Changes the phone number for an existing contact.
     Raises IndexError if args are missing.
+    Raises KeyError if contact is not found.
     """
     name, new_phone = args
 
-    # We change the logic here to explicitly raise KeyError if the contact is not found,
-    # so the decorator catches it and returns the universal error message.
     if name not in contacts:
-        # We can raise a KeyError to be caught by the decorator
-        # or rely on the original logic if it's considered non-exception based.
-        # Given the requirement, we stick to the original logic for 'not found',
-        # and rely on IndexError/ValueError for malformed input.
-        return "Error: Contact name not found."
+        raise KeyError(f"Contact name '{name}' not found.")
 
     contacts[name] = new_phone
     return "Contact updated."
@@ -125,13 +120,11 @@ def show_phone(args: List[str], contacts: Contacts) -> str:
     """
     Retrieves and displays the phone number for a given contact name.
     Raises IndexError if args are missing.
+    Raises KeyError if contact is not found.
     """
     name = args[0]
 
-    if name in contacts:
-        return contacts[name]
-    else:
-        return "Error: Contact name not found."
+    return contacts[name]
 
 
 def show_all(contacts: Contacts) -> str:
